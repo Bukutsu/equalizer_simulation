@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Equalizer Simulation Web</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" defer></script>
+</head>
+<body>
+    <header>
+        <div class="header-top">
+            <h1 data-i18n="title">Equalizer Simulation</h1>
+            <div class="toolbar">
+                <label class="language-select">
+                    <span data-i18n="language_label">Language</span>
+                    <select id="language-select">
+                        <option value="en" data-i18n="lang_en">English</option>
+                        <option value="th" data-i18n="lang_th">ไทย</option>
+                    </select>
+                </label>
+                <button type="button" id="theme-toggle" class="theme-toggle" data-i18n="toggle_dark">Enable Dark Mode</button>
+            </div>
+        </div>
+        <p data-i18n="subtitle">Upload an audio file, choose a filter topology, and preview the equalized results.</p>
+    </header>
+
+    <main>
+        <section class="panel">
+            <h2 data-i18n="section_upload">1. Upload Audio</h2>
+            <form id="upload-form">
+                <input type="file" id="audio-file" name="audio" accept=".mp3,.wav,.flac,.ogg,.m4a" required>
+                <button type="submit" data-i18n="upload_button">Upload</button>
+            </form>
+            <p id="status-message" class="info" data-i18n="status_ready">Select a file to get started.</p>
+        </section>
+
+        <section class="panel eq-panel">
+            <h2 data-i18n="section_eq">2. Equalizer Settings</h2>
+            <div id="sliders">
+                {% for band in bands %}
+                <div class="slider-group">
+                    <label for="band-{{ loop.index0 }}">{{ band.name }} ({{ band.center_freq|int }} Hz)</label>
+                    <input type="range" id="band-{{ loop.index0 }}" class="band-slider" data-index="{{ loop.index0 }}" min="-12" max="12" step="0.5" value="0">
+                    <span class="gain-label" id="band-{{ loop.index0 }}-label">0.0 dB</span>
+                </div>
+                {% endfor %}
+            </div>
+
+            <fieldset id="filter-type">
+                <legend data-i18n="filter_legend">Filter Type</legend>
+                <label>
+                    <input type="radio" name="filterType" value="IIR" checked>
+                    <span data-i18n="filter_iir">IIR (biquad cascade)</span>
+                </label>
+                <label>
+                    <input type="radio" name="filterType" value="FIR">
+                    <span data-i18n="filter_fir">FIR (linear-phase convolution)</span>
+                </label>
+            </fieldset>
+
+            <button id="apply-button" disabled data-i18n="apply_button">Apply Equalizer</button>
+        </section>
+
+        <section class="panel">
+            <h2 data-i18n="section_response">3. Frequency Response</h2>
+            <div id="frequency-chart"></div>
+        </section>
+
+        <section class="panel transfer-panel">
+            <h2 data-i18n="section_transfer">4. Z-Transform Transfer Function</h2>
+            <p data-i18n="transfer_desc">The expression below is rendered using \(H(z)\) with \(z^{-1}\) powers.</p>
+            <div id="transfer-function" class="transfer-box" data-i18n="transfer_default">Upload and process audio to view \(H(z)\).</div>
+        </section>
+
+        <section class="panel audio-panel">
+            <h2 data-i18n="section_preview">5. Preview Audio</h2>
+            <div class="audio-player">
+                <h3 data-i18n="original_audio">Original</h3>
+                <audio id="original-audio" controls></audio>
+            </div>
+            <div class="audio-player">
+                <h3 data-i18n="processed_audio">Equalized</h3>
+                <audio id="processed-audio" controls></audio>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <small data-i18n="footer_note">FIR/IIR branching mirrors the DSP flow from the design diagram.</small>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
