@@ -161,10 +161,9 @@
 
   const renderTransferMessage = () => {
     if (currentTransferKey === "custom" && lastTransferData) {
-      const { latex, text } = lastTransferData;
+      const { latex } = lastTransferData;
       transferBox.innerHTML = `
         <div class="tf-math">\\[${latex}\\]</div>
-        <pre class="tf-text">${text}</pre>
       `;
       if (window.MathJax && window.MathJax.typesetPromise) {
         window.MathJax.typesetPromise([transferBox]);

@@ -283,13 +283,6 @@ audio {
     margin-bottom: 0.75rem;
 }
 
-.tf-text {
-    margin: 0;
-    font-family: "Courier New", Courier, monospace;
-    white-space: pre-wrap;
-    word-break: break-word;
-}
-
 .transfer-panel {
     grid-column: 1 / -1;
 }
