@@ -2,6 +2,8 @@
 
 Interactive five-band equalizer simulator with a web-based interface. Upload an audio file, tweak EQ bands in the browser, preview the live frequency response, inspect the symbolic Z-transform transfer function, and listen to both the original and processed versions.
 
+![Signal flow diagram](static/images/flow_diagram.png)
+
 ## Features
 - Five parametric bands spanning 60 Hz to 12 kHz with ±12 dB gain per band.
 - Live frequency-response plot that updates as you move the sliders.
