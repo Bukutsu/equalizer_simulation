@@ -14,6 +14,8 @@ from scipy.signal import fftconvolve, freqz, lfilter, firwin2
 
 @dataclass
 class EqualizerBand:
+    """Settings for a single peaking filter that shapes one region of the spectrum."""
+
     name: str
     center_freq: float
     q: float = 1.1
@@ -21,6 +23,8 @@ class EqualizerBand:
 
 @dataclass
 class AudioTrack:
+    """In-memory audio clip that stores waveform data alongside its sample rate."""
+
     data: np.ndarray
     sample_rate: int
 
@@ -41,11 +45,13 @@ AUDIO_STORE: Dict[str, AudioTrack] = {}
 
 @app.route("/", methods=["GET"])
 def index():
+    """Render the main interface where users can upload audio and tweak gains."""
     return render_template("index.html", bands=EQ_BANDS)
 
 
 @app.route("/upload", methods=["POST"])
 def upload_audio():
+    """Load user audio into memory, normalize amplitude, and return analysis data."""
     file = request.files.get("audio")
     if file is None or file.filename == "":
         return jsonify({"error": "No audio file provided."}), 400
@@ -84,6 +90,7 @@ def upload_audio():
 
 @app.route("/process", methods=["POST"])
 def process_audio():
+    """Apply the requested equalizer settings and return processed audio plus plots."""
     payload = request.get_json(silent=True)
     if payload is None:
         return jsonify({"error": "Missing JSON payload."}), 400
@@ -124,6 +131,7 @@ def process_audio():
 
 
 def apply_iir_filters(audio: np.ndarray, gains_db: List[float], sample_rate: int) -> np.ndarray:
+    """Cascade biquad peaking filters for each band and prevent clipping."""
     processed = audio.copy()
     for band, gain_db in zip(EQ_BANDS, gains_db):
         if abs(gain_db) < 1e-3:
@@ -138,6 +146,7 @@ def apply_iir_filters(audio: np.ndarray, gains_db: List[float], sample_rate: int
 
 
 def apply_fir_filters(audio: np.ndarray, gains_db: List[float], sample_rate: int) -> np.ndarray:
+    """Convolve the signal with a custom FIR kernel that approximates the target EQ."""
     kernel = design_fir_kernel(gains_db, sample_rate)
     processed = np.empty_like(audio)
     for channel in range(audio.shape[1]):
@@ -150,6 +159,7 @@ def apply_fir_filters(audio: np.ndarray, gains_db: List[float], sample_rate: int
 
 
 def compute_frequency_response(gains_db: List[float], sample_rate: int, filter_type: str) -> Tuple[List[float], List[float]]:
+    """Predict the magnitude response for visual feedback in the UI."""
     frequencies = np.logspace(np.log10(20), np.log10(20000), num=512)
     omega = 2 * np.pi * frequencies / sample_rate
 
@@ -168,6 +178,7 @@ def compute_frequency_response(gains_db: List[float], sample_rate: int, filter_t
 
 
 def compute_transfer_function(gains_db: List[float], sample_rate: int, filter_type: str) -> Tuple[str, str]:
+    """Construct a symbolic transfer function usable for plain text and LaTeX output."""
     w = sp.symbols("w")  # w represents z^{-1}
     z = sp.symbols("z")
 
@@ -193,6 +204,7 @@ def compute_transfer_function(gains_db: List[float], sample_rate: int, filter_ty
 
 
 def polynomial_from_coeffs(coeffs: np.ndarray, w_symbol: sp.Symbol) -> sp.Expr:
+    """Convert numeric coefficients into a SymPy polynomial ordered by delay powers."""
     terms = []
     for idx, coeff in enumerate(np.atleast_1d(coeffs)):
         if abs(coeff) < 1e-10:
@@ -204,12 +216,14 @@ def polynomial_from_coeffs(coeffs: np.ndarray, w_symbol: sp.Symbol) -> sp.Expr:
 
 
 def rounded_float(value: float, digits: int = 6) -> sp.Float:
+    """Round floating point values for cleaner symbolic output."""
     if abs(value) < 10 ** (-digits - 2):
         value = 0.0
     return sp.Float(f"{value:.6g}")
 
 
 def design_peaking_eq(f0: float, q: float, gain_db: float, sample_rate: int):
+    """Design a biquad peaking filter; return identity filters for invalid inputs."""
     if sample_rate <= 0:
         raise ValueError("Sample rate must be positive.")
     if f0 <= 0 or f0 >= sample_rate / 2:
@@ -235,6 +249,7 @@ def design_peaking_eq(f0: float, q: float, gain_db: float, sample_rate: int):
 
 
 def design_fir_kernel(gains_db: List[float], sample_rate: int) -> np.ndarray:
+    """Create a smooth magnitude profile and design an FIR filter that matches it."""
     gains = np.array(gains_db, dtype=np.float64)
     if np.allclose(gains, 0.0):
         kernel = np.zeros(FIR_TAPS, dtype=np.float64)
@@ -273,6 +288,7 @@ def design_fir_kernel(gains_db: List[float], sample_rate: int) -> np.ndarray:
 
 
 def encode_audio_data_uri(audio: np.ndarray, sample_rate: int) -> str:
+    """Serialize audio to WAV and wrap it as a base64 data URI for the browser."""
     buffer = io.BytesIO()
     sf.write(buffer, audio, sample_rate, subtype="PCM_16", format="WAV")
     buffer.seek(0)
